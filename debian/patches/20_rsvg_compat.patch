@@ -1,0 +1,52 @@
+Index: librsvg-2.40.0/rsvg-convert.c
+===================================================================
+--- librsvg-2.40.0.orig/rsvg-convert.c	2013-10-14 23:15:52.000814272 +0200
++++ librsvg-2.40.0/rsvg-convert.c	2013-10-14 23:15:52.000814272 +0200
+@@ -148,6 +148,8 @@
+     cairo_t *cr = NULL;
+     RsvgDimensionData dimensions;
+     FILE *output_file = stdout;
++    char *basename;
++    gboolean rsvg_compat = FALSE;
+ 
+     GOptionEntry options_table[] = {
+         {"dpi-x", 'd', 0, G_OPTION_ARG_DOUBLE, &dpi_x,
+@@ -199,6 +201,27 @@
+         return 0;
+     }
+ 
++    if (args)
++        while (args[n_args] != NULL)
++            n_args++;
++
++    basename = g_path_get_basename (argv[0]);
++    if (g_ascii_strcasecmp (basename, "rsvg") == 0) {
++        rsvg_compat = TRUE;
++    }
++    g_free (basename);
++
++    if (rsvg_compat) {
++        /* We are being called as rsvg. Apply some compat magic */
++        if (n_args == 2) {
++            output = g_strdup (args[1]);
++            n_args = 1;
++        } else {
++            fprintf (stderr, _("Please supply an input and output file.\n"));
++            exit (1);
++        }
++    }
++
+     if (output != NULL) {
+         output_file = fopen (output, "wb");
+         if (!output_file) {
+@@ -210,10 +233,6 @@
+         g_free (output);
+     }
+ 
+-    if (args)
+-        while (args[n_args] != NULL)
+-            n_args++;
+-
+     if (n_args == 0) {
+         n_args = 1;
+         using_stdin = TRUE;
